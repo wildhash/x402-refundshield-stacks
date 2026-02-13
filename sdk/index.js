@@ -16,12 +16,13 @@ class X402Client {
     this.network = options.network || STACKS_TESTNET;
     this.contractAddress = options.contractAddress || 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM';
     this.contractName = options.contractName || 'timeout-escrow';
+    this.defaultFee = options.defaultFee || BigInt(10000);
   }
 
   /**
    * Create a deposit transaction for an escrow
    */
-  async createDepositTransaction(escrowId, providerAddress, amount, timeoutBlocks, senderKey) {
+  async createDepositTransaction(escrowId, providerAddress, amount, timeoutBlocks, senderKey, options = {}) {
     const escrowIdBuffer = Buffer.from(escrowId, 'hex');
     
     const txOptions = {
@@ -39,7 +40,7 @@ class X402Client {
       network: this.network,
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,
-      fee: BigInt(10000)
+      fee: options.fee || this.defaultFee
     };
 
     const transaction = await makeContractCall(txOptions);
@@ -57,7 +58,7 @@ class X402Client {
   /**
    * Create a claim transaction for a provider
    */
-  async createClaimTransaction(escrowId, receiptHash, senderKey) {
+  async createClaimTransaction(escrowId, receiptHash, senderKey, options = {}) {
     const escrowIdBuffer = Buffer.from(escrowId, 'hex');
     const receiptHashBuffer = Buffer.from(receiptHash, 'hex');
     
@@ -74,7 +75,7 @@ class X402Client {
       network: this.network,
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,
-      fee: BigInt(10000)
+      fee: options.fee || this.defaultFee
     };
 
     const transaction = await makeContractCall(txOptions);
@@ -84,7 +85,7 @@ class X402Client {
   /**
    * Create a refund transaction for a payer
    */
-  async createRefundTransaction(escrowId, senderKey) {
+  async createRefundTransaction(escrowId, senderKey, options = {}) {
     const escrowIdBuffer = Buffer.from(escrowId, 'hex');
     
     const txOptions = {
@@ -97,7 +98,7 @@ class X402Client {
       network: this.network,
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,
-      fee: BigInt(10000)
+      fee: options.fee || this.defaultFee
     };
 
     const transaction = await makeContractCall(txOptions);

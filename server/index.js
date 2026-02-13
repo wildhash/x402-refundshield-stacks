@@ -222,15 +222,21 @@ app.post('/api/claim', async (req, res) => {
 
 // Protected resource endpoint
 app.get('/api/protected-resource', requirePayment, async (req, res) => {
-  // Generate receipt hash for this access
-  const receiptHash = crypto.randomBytes(32);
+  // Generate receipt hash based on content and transaction details
+  // This creates verifiable proof of service
+  const content = 'This is premium content that requires payment';
+  const timestamp = Date.now();
+  const escrowIdStr = req.escrowId ? req.escrowId.toString('hex') : 'unknown';
+  
+  const receiptData = `${content}|${timestamp}|${escrowIdStr}`;
+  const receiptHash = crypto.createHash('sha256').update(receiptData).digest();
   
   res.json({
     success: true,
     message: 'Access granted to protected resource',
     data: {
-      content: 'This is premium content that requires payment',
-      timestamp: Date.now(),
+      content: content,
+      timestamp: timestamp,
       receiptHash: receiptHash.toString('hex')
     },
     escrowId: req.escrowId.toString('hex')
