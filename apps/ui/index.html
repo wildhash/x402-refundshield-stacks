@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>x402 RefundShield (Stacks)</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <h1>x402 RefundShield (Stacks)</h1>
+
+    <div class="card">
+      <button id="callPremium">Call /premium</button>
+      <pre id="out"></pre>
+    </div>
+
+    <div class="card">
+      <h3>Payment Proof (paste txid later)</h3>
+      <label>paymentId <input id="paymentId" /></label>
+      <label>txid <input id="txid" /></label>
+      <button id="fulfill">Send X402-Payment header</button>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

@@ -2,23 +2,29 @@
 node_modules/
 package-lock.json
 
+# Build outputs
+dist/
+*.js.map
+
 # Environment variables
 .env
-
-# Build artifacts
-dist/
-build/
-*.log
+.env.local
+.env.*.local
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
 
 # Testing
 coverage/
