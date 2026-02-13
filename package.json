@@ -1,0 +1,37 @@
+{
+  "name": "x402-refundshield-stacks",
+  "version": "1.0.0",
+  "description": "Refund layer for x402 and Stacks",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js",
+    "test": "node tests/basic-tests.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wildhash/x402-refundshield-stacks.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/wildhash/x402-refundshield-stacks/issues"
+  },
+  "homepage": "https://github.com/wildhash/x402-refundshield-stacks#readme",
+  "dependencies": {
+    "@stacks/auth": "^7.3.1",
+    "@stacks/network": "^7.3.1",
+    "@stacks/transactions": "^7.3.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@hirosystems/clarinet-sdk": "^3.8.1",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.2.3",
+    "typescript": "^5.9.3"
+  }
+}
