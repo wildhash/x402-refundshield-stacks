@@ -1,0 +1,17 @@
+[project]
+name = "refundshield-stacks"
+description = "Refund layer for x402 and Stacks - timeout escrow for STX payments"
+authors = []
+telemetry = true
+cache_dir = ".cache"
+requirements = []
+boot_contracts = []
+
+[contracts.refund-escrow]
+path = "contracts/refund-escrow.clar"
+clarity_version = 2
+epoch = 2.5
+
+[repl]
+costs_version = 3
+parser_version = 2

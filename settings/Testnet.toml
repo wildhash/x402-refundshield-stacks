@@ -1,0 +1,10 @@
+[network]
+name = "testnet"
+stacks_node_rpc_address = "https://api.testnet.hiro.so"
+deployment_fee_rate = 10
+
+[accounts.deployer]
+# DO NOT commit private keys or mnemonics to version control
+# Set your testnet deployer mnemonic in environment: CLARINET_TESTNET_DEPLOYER_MNEMONIC
+# Or replace this with your own testnet mnemonic before deploying
+mnemonic = "${CLARINET_TESTNET_DEPLOYER_MNEMONIC}"

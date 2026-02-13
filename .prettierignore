@@ -1,0 +1,22 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+dist
+build
+*.js.map
+*.d.ts
+
+# Clarinet
+.cache
+deployments
+
+# Git
+.git
+
+# Misc
+*.log
+.env
+.env.*
+!.env.example
