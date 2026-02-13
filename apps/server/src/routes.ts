@@ -3,6 +3,11 @@ import { build402Challenge, receiptHash } from "./refundshield.js";
 
 export const router = express.Router();
 
+interface PaymentProof {
+  paymentId: string;
+  txid?: string;
+}
+
 // MVP: we accept a header proof format, but don't fully verify on-chain yet.
 // Header: X402-Payment: {"paymentId":"...","txid":"..."}
 router.get("/premium", (req, res) => {
@@ -25,7 +30,7 @@ router.get("/premium", (req, res) => {
     return res.status(402).json({ paymentRequired: true, ...challenge });
   }
 
-  let proof: any;
+  let proof: PaymentProof;
   try {
     proof = JSON.parse(header);
   } catch {
