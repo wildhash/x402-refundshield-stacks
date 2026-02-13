@@ -143,33 +143,3 @@ export async function verifyDeposit(
   console.log(`[stacks] Deposit verified successfully`);
   return true;
 }
-
-/**
- * Gets the payment status from the contract
- * 
- * @param paymentId - Payment ID to check (hex string without 0x prefix)
- * @param contractAddress - Contract address
- * @param contractName - Contract name
- * @param network - Network to check
- * @returns Payment data if found, null otherwise
- */
-export async function getPaymentStatus(
-  paymentId: string,
-  contractAddress: string,
-  contractName: string,
-  network: "testnet" | "mainnet" = "testnet"
-): Promise<{ status: string; data: any } | null> {
-  // This would require calling the read-only function get-payment
-  // For now, we'll just indicate this is a placeholder
-  // In a full implementation, we'd use the Stacks blockchain API client
-  // to call the read-only function
-  
-  console.log(
-    `[stacks] Getting payment status for ${paymentId} (placeholder - not yet implemented)`
-  );
-  
-  // TODO: Implement read-only function call to get-payment
-  // This requires the @stacks/transactions callReadOnlyFunction
-  
-  return null;
-}
