@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import type { StacksNetwork } from "./stacks.js";
 
 export type RefundPolicy = {
   type: "escrow-timeout";
@@ -8,8 +9,9 @@ export type RefundPolicy = {
 
 export type PaymentChallenge = {
   paymentId: string;          // hex
+  provider: string;
   amountUstx: string;
-  network: "testnet" | "mainnet";
+  network: StacksNetwork;
   escrow: { address: string; name: string };
   expiry: { seconds: number; note: string };
   refundPolicy: RefundPolicy;
@@ -21,15 +23,17 @@ export function makePaymentId(input: string) {
 
 export function build402Challenge(args: {
   route: string;
+  providerAddress: string;
   amountUstx: number;
   expirySeconds: number;
-  network: "testnet" | "mainnet";
+  network: StacksNetwork;
   escrowAddress: string;
   escrowName: string;
 }): PaymentChallenge {
   const paymentId = makePaymentId(`${args.route}|${Date.now()}|${crypto.randomUUID()}`);
   return {
     paymentId,
+    provider: args.providerAddress,
     amountUstx: String(args.amountUstx),
     network: args.network,
     escrow: { address: args.escrowAddress, name: args.escrowName },

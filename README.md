@@ -135,6 +135,7 @@ Clarinet.toml              # Clarinet project configuration
 2. Server → 402 Payment Required + PaymentChallenge
    {
      paymentId: "abc123...",
+     provider: "ST...",
      amountUstx: "100000",
      escrow: { address: "ST...", name: "refund-escrow" },
      expiry: { seconds: 90 },

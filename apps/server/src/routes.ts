@@ -1,6 +1,6 @@
 import express from "express";
 import { build402Challenge, receiptHash } from "./refundshield.js";
-import { verifyDeposit } from "./stacks.js";
+import { parseStacksNetwork, verifyDeposit } from "./stacks.js";
 
 export const router = express.Router();
 
@@ -12,9 +12,10 @@ interface PaymentProof {
 // MVP: we accept a header proof format, but don't fully verify on-chain yet.
 // Header: X402-Payment: {"paymentId":"...","txid":"..."}
 router.get("/premium", async (req, res) => {
-  const network = (process.env.NETWORK || "testnet") as "testnet" | "mainnet";
+  const network = parseStacksNetwork(process.env.NETWORK);
   const escrowAddress = process.env.ESCROW_CONTRACT_ADDRESS || "ST_TESTNET_ADDRESS";
   const escrowName = process.env.ESCROW_CONTRACT_NAME || "refund-escrow";
+  const providerAddress = process.env.PROVIDER_ADDRESS || escrowAddress;
   const amountUstx = Number(process.env.PRICE_USTX || 100000);
   const expirySeconds = Number(process.env.EXPIRY_SECONDS || 90);
 
@@ -25,6 +26,7 @@ router.get("/premium", async (req, res) => {
       amountUstx,
       expirySeconds,
       network,
+      providerAddress,
       escrowAddress,
       escrowName
     });
@@ -38,39 +40,23 @@ router.get("/premium", async (req, res) => {
     return res.status(400).json({ error: "Bad X402-Payment header JSON" });
   }
 
+  if (typeof proof.paymentId !== "string" || !/^[0-9a-f]{64}$/i.test(proof.paymentId)) {
+    return res.status(400).json({ error: "Invalid paymentId" });
+  }
+
+  if (proof.txid !== undefined && typeof proof.txid !== "string") {
+    return res.status(400).json({ error: "Bad txid" });
+  }
+
   // Check for simulated failure
   if (String(process.env.SIMULATE_FAILURE).toLowerCase() === "true") {
     return res.status(503).json({ error: "Simulated failure: no fulfillment." });
   }
 
-  // Verify deposit on-chain if txid is provided and verification is not disabled
+  // Require a txid; if verification is enabled, verify the deposit on-chain.
   const skipVerification = String(process.env.SKIP_VERIFICATION).toLowerCase() === "true";
-  
-  if (proof.txid && !skipVerification) {
-    console.log(`[premium] Verifying deposit for payment ${proof.paymentId}`);
-    
-    const isValid = await verifyDeposit(
-      proof.txid,
-      proof.paymentId,
-      amountUstx,
-      escrowAddress,
-      escrowName,
-      network
-    );
 
-    if (!isValid) {
-      console.log(`[premium] Deposit verification failed for ${proof.paymentId}`);
-      return res.status(402).json({
-        error: "Payment verification failed",
-        message: "The provided transaction does not match the expected deposit",
-        paymentId: proof.paymentId,
-        txid: proof.txid
-      });
-    }
-
-    console.log(`[premium] Deposit verified for ${proof.paymentId}`);
-  } else if (!proof.txid && !skipVerification) {
-    console.log(`[premium] No txid provided for ${proof.paymentId}`);
+  if (!proof.txid) {
     return res.status(402).json({
       error: "Transaction ID required",
       message: "Please provide a txid in the X402-Payment header",
@@ -78,9 +64,50 @@ router.get("/premium", async (req, res) => {
     });
   }
 
+  if (!skipVerification) {
+    console.log(`[premium] Verifying deposit for payment ${proof.paymentId}`);
+
+    const result = await verifyDeposit(
+      proof.txid,
+      proof.paymentId,
+      providerAddress,
+      amountUstx,
+      escrowAddress,
+      escrowName,
+      network
+    );
+
+    if (!result.ok) {
+      if (result.reason === "pending") {
+        return res.status(409).json({
+          error: "Transaction pending",
+          message: "Deposit transaction is still pending confirmation; retry shortly",
+          paymentId: proof.paymentId,
+          txid: proof.txid,
+        });
+      }
+
+      if (result.reason === "timeout" || result.reason === "rate-limited" || result.reason === "api-error") {
+        return res.status(503).json({
+          error: "Verification unavailable",
+          message: "Stacks API verification unavailable; retry shortly",
+          paymentId: proof.paymentId,
+          txid: proof.txid,
+        });
+      }
+
+      return res.status(402).json({
+        error: "Payment verification failed",
+        message: "The provided transaction does not match the expected deposit",
+        paymentId: proof.paymentId,
+        txid: proof.txid,
+      });
+    }
+  }
+
   const payload = {
     premium: true,
-    message: "✅ fulfilled",
+    message: "fulfilled",
     paymentId: proof.paymentId,
     txid: proof.txid ?? null,
     ts: new Date().toISOString()
@@ -103,36 +130,58 @@ router.get("/status/:paymentId", async (req, res) => {
     });
   }
 
-  const network = (process.env.NETWORK || "testnet") as "testnet" | "mainnet";
+  const network = parseStacksNetwork(process.env.NETWORK);
   const escrowAddress = process.env.ESCROW_CONTRACT_ADDRESS || "ST_TESTNET_ADDRESS";
   const escrowName = process.env.ESCROW_CONTRACT_NAME || "refund-escrow";
+  const providerAddress = process.env.PROVIDER_ADDRESS || escrowAddress;
   const amountUstx = Number(process.env.PRICE_USTX || 100000);
 
   console.log(`[status] Checking deposit for payment ${paymentId}`);
 
-  const isDeposited = await verifyDeposit(
+  const result = await verifyDeposit(
     txid,
     paymentId,
+    providerAddress,
     amountUstx,
     escrowAddress,
     escrowName,
     network
   );
 
-  if (isDeposited) {
+  if (result.ok) {
     return res.json({
       paymentId,
       status: "deposited",
       txid,
       verified: true,
     });
-  } else {
+  }
+
+  if (result.reason === "pending") {
     return res.json({
       paymentId,
-      status: "unknown",
+      status: "pending",
       txid,
       verified: false,
-      note: "Transaction not found or does not match expected deposit",
+      note: "Transaction pending confirmation; retry shortly",
     });
   }
+
+  if (result.reason === "timeout" || result.reason === "rate-limited" || result.reason === "api-error") {
+    return res.status(503).json({
+      paymentId,
+      status: "verification-unavailable",
+      txid,
+      verified: false,
+      note: "Stacks API verification unavailable; retry shortly",
+    });
+  }
+
+  return res.json({
+    paymentId,
+    status: "unknown",
+    txid,
+    verified: false,
+    note: "Transaction not found or does not match expected deposit",
+  });
 });

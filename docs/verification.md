@@ -100,18 +100,25 @@ In `apps/server/.env`:
 
 ```bash
 # Network to check transactions on
-NETWORK=testnet  # or mainnet
+NETWORK=testnet  # devnet | testnet | mainnet
+
+# Optional override for the Stacks API base URL (useful for devnet)
+# STACKS_API_BASE_URL=http://localhost:3999
+# STACKS_API_TIMEOUT_MS=5000
 
 # Deployed contract details
 ESCROW_CONTRACT_ADDRESS=ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
 ESCROW_CONTRACT_NAME=refund-escrow
+
+# Provider principal (who can call `claim`)
+PROVIDER_ADDRESS=ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
 
 # Payment parameters
 PRICE_USTX=100000
 EXPIRY_SECONDS=90
 
 # Verification settings
-SKIP_VERIFICATION=false  # Set to true to disable on-chain verification
+SKIP_VERIFICATION=true  # Set to false to require on-chain verification
 ```
 
 ### Disabling Verification
@@ -122,7 +129,7 @@ During development, you may want to test without on-chain verification:
 SKIP_VERIFICATION=true
 ```
 
-When enabled, the server will accept any payment header without checking the blockchain.
+When enabled, the server will accept any `txid` without checking the blockchain. A `txid` is still required.
 
 ## Verification Logic
 
@@ -153,6 +160,9 @@ const args = parseContractCallArgs(tx);
 
 // Verify payment-id matches
 if (args["payment-id"]?.value !== paymentId) return false;
+
+// Verify provider matches
+if (args["provider"]?.value !== providerAddress) return false;
 
 // Verify amount matches
 if (Number(args["amount"]?.value) !== amountUstx) return false;
