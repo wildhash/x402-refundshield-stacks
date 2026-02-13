@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>x402 RefundShield Demo</title>
+    <script src="https://unpkg.com/@stacks/connect@7.5.0/dist/connect.umd.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .button-secondary {
+            background: #6c757d;
+        }
+        
+        .button-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .button-success {
+            background: #28a745;
+        }
+        
+        .button-success:hover {
+            background: #218838;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .status-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .status-box pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .status-pending {
+            background: #ffc107;
+            color: #000;
+        }
+        
+        .status-active {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .status-claimed {
+            background: #28a745;
+            color: white;
+        }
+        
+        .status-refunded {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .status-expired {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .info-box p {
+            margin-bottom: 8px;
+            color: #004085;
+        }
+        
+        .steps {
+            counter-reset: step-counter;
+            list-style: none;
+        }
+        
+        .steps li {
+            counter-increment: step-counter;
+            margin-bottom: 15px;
+            padding-left: 40px;
+            position: relative;
+        }
+        
+        .steps li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: #667eea;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .alert {
+            padding: 12px 20px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔒 x402 RefundShield</h1>
+            <p>HTTP 402 Payments with Refund-Guaranteed Escrow on Stacks</p>
+        </div>
+        
+        <div class="card">
+            <h2>How It Works</h2>
+            <ol class="steps">
+                <li>Request a protected resource → Server returns 402 with payment challenge</li>
+                <li>Deposit STX into timeout-escrow contract with refund guarantee</li>
+                <li>Access protected resource with payment proof</li>
+                <li>Provider claims payment with receipt hash (before timeout)</li>
+                <li>Or payer gets automatic refund after timeout expires</li>
+            </ol>
+        </div>
+        
+        <div class="card">
+            <h2>Demo Flow</h2>
+            
+            <div class="info-box">
+                <p><strong>Network:</strong> Stacks Testnet</p>
+                <p><strong>Server:</strong> <span id="serverUrl">http://localhost:3000</span></p>
+            </div>
+            
+            <div id="alertContainer"></div>
+            
+            <div class="input-group">
+                <label for="walletAddress">Your Wallet Address (optional):</label>
+                <input type="text" id="walletAddress" placeholder="ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM">
+            </div>
+            
+            <button class="button" onclick="connectWallet()">Connect Stacks Wallet</button>
+            <button class="button" onclick="requestProtectedResource()">1. Request Protected Resource (Get 402)</button>
+            <button class="button" id="depositBtn" onclick="simulateDeposit()" disabled>2. Simulate Deposit</button>
+            <button class="button button-success" id="accessBtn" onclick="accessWithPayment()" disabled>3. Access with Payment</button>
+            
+            <div class="status-box">
+                <pre id="output">Waiting for action...</pre>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Check Escrow Status</h2>
+            
+            <div class="input-group">
+                <label for="escrowIdInput">Escrow ID:</label>
+                <input type="text" id="escrowIdInput" placeholder="Enter escrow ID (hex)">
+            </div>
+            
+            <button class="button button-secondary" onclick="checkStatus()">Check Status</button>
+            <button class="button button-secondary" onclick="listAllEscrows()">List All Escrows</button>
+            
+            <div class="status-box">
+                <pre id="statusOutput">No status check yet...</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentChallenge = null;
+        let currentEscrowId = null;
+        let userAddress = null;
+        
+        const API_BASE = 'http://localhost:3000/api';
+        
+        function showAlert(message, type = 'info') {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+        
+        function log(message, data = null) {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            let text = `[${timestamp}] ${message}\n`;
+            
+            if (data) {
+                text += JSON.stringify(data, null, 2) + '\n';
+            }
+            
+            output.textContent += text + '\n';
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function logStatus(message, data = null) {
+            const output = document.getElementById('statusOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            let text = `[${timestamp}] ${message}\n`;
+            
+            if (data) {
+                text += JSON.stringify(data, null, 2) + '\n';
+            }
+            
+            output.textContent = text;
+        }
+        
+        async function connectWallet() {
+            try {
+                log('Attempting to connect Stacks wallet...');
+                
+                if (typeof StacksConnect !== 'undefined') {
+                    const { showConnect, AppConfig, UserSession } = StacksConnect;
+                    
+                    const appConfig = new AppConfig(['store_write', 'publish_data']);
+                    const userSession = new UserSession({ appConfig });
+                    
+                    showConnect({
+                        appDetails: {
+                            name: 'x402 RefundShield',
+                            icon: window.location.origin + '/logo.png'
+                        },
+                        onFinish: () => {
+                            const userData = userSession.loadUserData();
+                            userAddress = userData.profile.stxAddress.testnet;
+                            document.getElementById('walletAddress').value = userAddress;
+                            log('Wallet connected!', { address: userAddress });
+                            showAlert('Wallet connected successfully!', 'success');
+                        },
+                        userSession
+                    });
+                } else {
+                    throw new Error('Stacks Connect not loaded');
+                }
+            } catch (error) {
+                log('Error connecting wallet:', error);
+                showAlert('Could not connect wallet. Using demo mode.', 'error');
+            }
+        }
+        
+        async function requestProtectedResource() {
+            try {
+                log('Requesting protected resource...');
+                
+                const response = await fetch(`${API_BASE}/protected-resource`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.status === 402) {
+                    const challenge = await response.json();
+                    currentChallenge = challenge;
+                    currentEscrowId = challenge.paymentDetails.escrowId;
+                    
+                    log('Received 402 Payment Required:', challenge);
+                    
+                    document.getElementById('escrowIdInput').value = currentEscrowId;
+                    document.getElementById('depositBtn').disabled = false;
+                    
+                    showAlert('Payment challenge received! Escrow ID: ' + currentEscrowId.substring(0, 16) + '...', 'info');
+                } else {
+                    const data = await response.json();
+                    log('Unexpected response:', data);
+                }
+            } catch (error) {
+                log('Error:', error);
+                showAlert('Error requesting resource: ' + error.message, 'error');
+            }
+        }
+        
+        function simulateDeposit() {
+            if (!currentChallenge) {
+                showAlert('No payment challenge available', 'error');
+                return;
+            }
+            
+            log('Simulating deposit transaction...');
+            log('In production, this would call the Clarity contract:');
+            log('Function: deposit-escrow');
+            log('Parameters:', {
+                escrowId: currentChallenge.paymentDetails.escrowId,
+                provider: currentChallenge.paymentDetails.provider,
+                amount: currentChallenge.paymentDetails.amount,
+                timeoutBlocks: currentChallenge.paymentDetails.timeoutBlocks
+            });
+            
+            // Simulate transaction
+            setTimeout(() => {
+                const txId = '0x' + Array.from({length: 64}, () => 
+                    Math.floor(Math.random() * 16).toString(16)).join('');
+                
+                log('Transaction simulated!', { txId });
+                showAlert('Deposit simulated successfully!', 'success');
+                
+                document.getElementById('accessBtn').disabled = false;
+            }, 1000);
+        }
+        
+        async function accessWithPayment() {
+            if (!currentEscrowId) {
+                showAlert('No escrow ID available', 'error');
+                return;
+            }
+            
+            try {
+                log('Accessing protected resource with payment proof...');
+                
+                const paymentProof = JSON.stringify({
+                    escrowId: currentEscrowId,
+                    txId: '0xsimulated',
+                    network: 'stacks-testnet'
+                });
+                
+                const response = await fetch(`${API_BASE}/protected-resource`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-payment-proof': paymentProof
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log('✅ Access granted!', data);
+                    showAlert('Successfully accessed protected resource!', 'success');
+                } else {
+                    log('❌ Access denied:', data);
+                    showAlert('Access denied: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                log('Error:', error);
+                showAlert('Error accessing resource: ' + error.message, 'error');
+            }
+        }
+        
+        async function checkStatus() {
+            const escrowId = document.getElementById('escrowIdInput').value;
+            
+            if (!escrowId) {
+                showAlert('Please enter an escrow ID', 'error');
+                return;
+            }
+            
+            try {
+                logStatus('Checking status for escrow: ' + escrowId);
+                
+                const response = await fetch(`${API_BASE}/status/${escrowId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    logStatus('Status:', data);
+                    showAlert(`Escrow status: ${data.status}`, 'success');
+                } else {
+                    logStatus('Error:', data);
+                    showAlert('Error: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                logStatus('Error:', error);
+                showAlert('Error checking status: ' + error.message, 'error');
+            }
+        }
+        
+        async function listAllEscrows() {
+            try {
+                logStatus('Fetching all tracked escrows...');
+                
+                const response = await fetch(`${API_BASE}/escrows`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    logStatus('All Escrows:', data);
+                    showAlert(`Found ${data.escrows.length} escrows`, 'success');
+                } else {
+                    logStatus('Error:', data);
+                    showAlert('Error fetching escrows', 'error');
+                }
+            } catch (error) {
+                logStatus('Error:', error);
+                showAlert('Error fetching escrows: ' + error.message, 'error');
+            }
+        }
+        
+        // Check server on load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    log('Server is online and ready!', data);
+                    showAlert('Server connected successfully!', 'success');
+                }
+            } catch (error) {
+                log('Warning: Could not connect to server');
+                showAlert('Server is not running. Please start the server first.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
