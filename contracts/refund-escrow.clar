@@ -66,7 +66,7 @@
           (asserts! (= tx-sender (get provider pv)) (err ERR_NOT_PROVIDER))
           (asserts! (<= burn-block-height (get expiry pv)) (err ERR_EXPIRED))
           ;; send STX to provider
-          (try! (as-contract (stx-transfer? (get amount pv) (as-contract tx-sender) tx-sender)))
+          (try! (as-contract (stx-transfer? (get amount pv) tx-sender (get provider pv))))
           (map-set payments
             {payment-id: payment-id}
             (merge pv { status: u1, receipt-hash: (some receipt-hash) })
@@ -88,7 +88,7 @@
           (asserts! (= tx-sender (get payer pv)) (err ERR_NOT_PAYER))
           (asserts! (> burn-block-height (get expiry pv)) (err ERR_NOT_EXPIRED))
           ;; send STX back to payer
-          (try! (as-contract (stx-transfer? (get amount pv) (as-contract tx-sender) tx-sender)))
+          (try! (as-contract (stx-transfer? (get amount pv) tx-sender (get payer pv))))
           (map-set payments {payment-id: payment-id} (merge pv { status: u2 }))
           (ok true)
         )
