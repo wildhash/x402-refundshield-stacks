@@ -10,6 +10,12 @@
 (define-constant ERR_EXPIRED u105)
 (define-constant ERR_NOT_EXPIRED u106)
 (define-constant ERR_BAD_AMOUNT u107)
+(define-constant ERR_INVALID_EXPIRY u108)
+
+;; Status constants for payment state
+(define-constant STATUS_DEPOSITED u0)
+(define-constant STATUS_CLAIMED u1)
+(define-constant STATUS_REFUNDED u2)
 
 (define-data-var protocol-version (string-ascii 16) "v0-escrow-timeout")
 
@@ -31,12 +37,13 @@
 )
 
 (define-private (is-deposited (p (tuple (payer principal) (provider principal) (amount uint) (expiry uint) (status uint) (meta-hash (buff 32)) (receipt-hash (optional (buff 32))))))
-  (= (get status p) u0)
+  (= (get status p) STATUS_DEPOSITED)
 )
 
 (define-public (deposit (payment-id (buff 32)) (provider principal) (amount uint) (expiry uint) (meta-hash (buff 32)))
   (begin
     (asserts! (> amount u0) (err ERR_BAD_AMOUNT))
+    (asserts! (> expiry burn-block-height) (err ERR_INVALID_EXPIRY))
     (asserts! (is-none (map-get? payments {payment-id: payment-id})) (err ERR_ALREADY_EXISTS))
     ;; transfer STX from tx-sender into this contract
     (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
@@ -47,7 +54,7 @@
         provider: provider,
         amount: amount,
         expiry: expiry,
-        status: u0,
+        status: STATUS_DEPOSITED,
         meta-hash: meta-hash,
         receipt-hash: none
       }
@@ -69,7 +76,7 @@
           (try! (as-contract (stx-transfer? (get amount pv) tx-sender (get provider pv))))
           (map-set payments
             {payment-id: payment-id}
-            (merge pv { status: u1, receipt-hash: (some receipt-hash) })
+            (merge pv { status: STATUS_CLAIMED, receipt-hash: (some receipt-hash) })
           )
           (ok true)
         )
@@ -89,7 +96,7 @@
           (asserts! (> burn-block-height (get expiry pv)) (err ERR_NOT_EXPIRED))
           ;; send STX back to payer
           (try! (as-contract (stx-transfer? (get amount pv) tx-sender (get payer pv))))
-          (map-set payments {payment-id: payment-id} (merge pv { status: u2 }))
+          (map-set payments {payment-id: payment-id} (merge pv { status: STATUS_REFUNDED }))
           (ok true)
         )
       )
