@@ -257,6 +257,26 @@ The Stacks API has rate limits. For high-traffic applications, consider:
 - Using a local Stacks node
 - Implementing exponential backoff for API calls
 
+**Important**: The current server implementation does not include rate limiting on the API endpoints. For production deployment, you should add rate limiting middleware to prevent abuse:
+
+```bash
+npm install express-rate-limit
+```
+
+Example rate limiting configuration:
+```typescript
+import rateLimit from 'express-rate-limit';
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests, please try again later.'
+});
+
+app.use('/premium', limiter);
+app.use('/status', limiter);
+```
+
 ## Future Enhancements
 
 ### Planned Improvements

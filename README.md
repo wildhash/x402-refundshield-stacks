@@ -245,6 +245,22 @@ npm run build
 npm start
 ```
 
+### Security Considerations
+
+⚠️ **Important for Production**:
+
+1. **Rate Limiting**: The current implementation does not include rate limiting. For production, add middleware like `express-rate-limit` to prevent API abuse.
+
+2. **Replay Protection**: Track fulfilled payment IDs in a database to prevent reusing the same transaction ID multiple times.
+
+3. **Input Validation**: Add comprehensive input validation for all API endpoints.
+
+4. **HTTPS**: Always use HTTPS in production to protect payment data in transit.
+
+5. **Contract State**: The current implementation verifies transactions but doesn't check if deposits have been claimed or refunded. Consider adding contract state checks via read-only function calls.
+
+See `docs/verification.md` for detailed security considerations.
+
 ---
 
 ## 💡 Why x402 + Refund Escrow?
