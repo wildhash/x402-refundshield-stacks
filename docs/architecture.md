@@ -51,8 +51,9 @@ Simple HTML/JS interface for testing the flow:
 ```typescript
 {
   paymentId: string;          // Unique identifier (SHA256 hash)
+  provider: string;           // Provider principal (who can claim)
   amountUstx: string;         // Amount in micro-STX
-  network: "testnet" | "mainnet";
+  network: "devnet" | "testnet" | "mainnet";
   escrow: {
     address: string;          // Contract deployer address
     name: string;             // Contract name
